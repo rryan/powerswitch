@@ -9,7 +9,7 @@ var notify = function(string) {
 
 var ordered_tab_ids = [];
 
-var showPopup = function() {
+var showPopup = function(mode) {
   var window_width = 850;
   var window_height = 400;
   var window_left =
@@ -20,23 +20,20 @@ var showPopup = function() {
           window.screen.availTop;
 
   window.open(
-      "popup.html", undefined,
+      "popup.html#" + mode, undefined,
       "location=no,chrome=no,fullscreen=yes,resizable=no," +
           "height=" + window_height + ",width=" + window_width + "," +
           "top=" + window_top + ",left=" + window_left);
 };
 
 chrome.commands.onCommand.addListener(function(command) {
-  showPopup();
-});
-
-chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'showPopup') {
-    showPopup();
+  if (command === "switch_tab") {
+    showPopup('tab');
+  } else if (command === "switch_bookmark") {
+    showPopup('bookmark');
   } else {
     debugger;
   }
-  sendResponse({});
 });
 
 chrome.windows.getAll({populate: true}, function(windows) {
@@ -111,4 +108,45 @@ chrome.tabs.onReplaced.addListener(function(added_tab_id, removed_tab_id) {
   }
   notify("did not find tab to remove");
   debugger;
+});
+
+var bookmark_ids = [];
+var bookmarks = [];
+chrome.bookmarks.getTree(function(root) {
+  var nodes = root;
+  while (nodes.length > 0) {
+    var node = nodes.pop();
+    if (node.url !== undefined) {
+      bookmarks.push(node);
+      bookmark_ids.push(node.id);
+    } else {
+      Array.prototype.push.apply(nodes, node.children);
+    }
+  }
+});
+
+var removeBookmarkWithId = function(bookmark_id) {
+  var bookmark_index = bookmark_ids.indexOf(bookmark_id);
+  if (bookmark_index === -1) {
+    notify("could not find bookmark to remove: " + bookmark_id);
+    debugger;
+  } else {
+    bookmark_ids = concat(
+      bookmark_ids.slice(0, bookmark_index),
+      bookmark_ids.slice(bookmark_index + 1));
+    bookmarks = concat(
+      bookmarks.slice(0, bookmark_index),
+      bookmarks.slice(bookmark_index + 1));
+  }
+};
+
+chrome.bookmarks.onCreated.addListener(function(bookmark_id, bookmark) {
+  notify('onCreated ' + bookmark.id);
+  bookmark_ids = concat([bookmark.id], bookmark_ids);
+  bookmarks = concat([bookmark], bookmarks);
+});
+
+chrome.bookmarks.onRemoved.addListener(function(bookmark_id, remove_info) {
+  notify('onRemoved ' + bookmark_id);
+  removeBookmarkWithId(bookmark_id);
 });

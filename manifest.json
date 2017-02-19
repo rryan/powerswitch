@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "PowerSwitch",
-  "version": "2013.9.21",
-  "description": "Switch tabs by typing",
+  "version": "2017.2.19",
+  "description": "Switch tabs and open bookmarks by typing",
   "background": {
     "scripts": ["MochiKit.js", "background.js"]
   },
@@ -12,9 +12,15 @@
         "default": "Ctrl+K"
       },
       "description": "Bring up the tab switcher"
+    },
+    "switch_bookmark": {
+      "suggested_key": {
+        "default": "Ctrl+I"
+      },
+      "description": "Bring up the bookmark switcher"
     }
   },
   "permissions": [
-    "tabs"
+    "tabs", "bookmarks"
   ]
 }
